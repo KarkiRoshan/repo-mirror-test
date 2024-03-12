@@ -5,14 +5,17 @@ on:
       - '*'
     branches:
       - '*'
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -20,8 +23,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Sync up to CodeCommit
-        uses: tsgit18/sync-up-to-codecommit-action@v1.0.6
-        with:
-          repository_name: mirror-repo-test
-          aws_region: ap-south-1
+      - name: Configure Git Credentials Helper
+        run: git config --global credential.'https://git-codecommit.*.amazonaws.com'.helper '!aws codecommit credential-helper $@'
+
+      - name: Add CodeCommit Remote
+        run: git remote add sync https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/mirror-repo-test
+
+      - name: Push to CodeCommit
+        run: git push sync --mirror
